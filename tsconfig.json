@@ -1,0 +1,18 @@
+{
+    "compilerOptions": {
+      "sourceMap": true,
+      "target": "es6",
+      "module": "CommonJS",
+      "strict": true,
+      "outDir": "./dist",
+      "lib": ["es2016"],
+      "declaration": true,
+      "moduleResolution": "node",
+      "allowSyntheticDefaultImports": true,
+      "esModuleInterop": true
+    },
+    "include": [
+        "./src"
+    ]
+  }
+  

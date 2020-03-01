@@ -1,0 +1,25 @@
+{
+  "name": "opentunnel",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "repository": "https://github.com/ex3ndr/opentunnel.git",
+  "author": "Steve Korshakov <steve@korshakov.com>",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "start": "tsc && concurrently --kill-others 'node ./dist/frontend.js' 'node ./dist/backend.js'"
+  },
+  "dependencies": {
+    "@types/express": "^4.17.2",
+    "@types/uuid": "^7.0.0",
+    "@types/ws": "^7.2.2",
+    "express": "^4.17.1",
+    "ts-nats": "^1.2.4",
+    "typescript": "^3.8.3",
+    "uuid": "^7.0.1",
+    "ws": "^7.2.1"
+  },
+  "devDependencies": {
+    "concurrently": "^5.1.0"
+  }
+}
