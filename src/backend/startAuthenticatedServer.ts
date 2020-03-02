@@ -39,7 +39,7 @@ export function startAuthenticatedServer(publicKey: string, port: number, handle
                     }
 
                     // Invoke handler
-                    handler(hostName, ws);
+                    handler(hostName.toLowerCase(), ws);
                 } else {
                     ws.close();
                     return;

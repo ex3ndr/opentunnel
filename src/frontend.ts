@@ -1,2 +1,2 @@
-import { startFrontendServer } from './frontend/startFrontendServer';
-startFrontendServer(9000);
+import { startFrontend } from './frontend/startFrontend';
+startFrontend(9000);

@@ -70,8 +70,7 @@ class ProtoConnection {
 
     onFrame = (buffer: Buffer) => {
         console.log(this.uid + ': >> ' + buffer.length);
-        let r = this._socket.write(buffer); // Handle result??
-        console.log(this.uid + ': ' + r);
+        this._socket.write(buffer); // Handle result??
     }
 
     close = () => {
@@ -88,14 +87,12 @@ class ProtoConnection {
 class ProtoSession {
     private ws: WebSocket;
     private port: number;
-    private hostname: string;
     private key: Buffer;
     private connections = new Map<string, ProtoConnection>();
 
-    constructor(ws: WebSocket, port: number, hostname: string, key: Buffer) {
+    constructor(ws: WebSocket, port: number, key: Buffer) {
         this.ws = ws;
         this.port = port;
-        this.hostname = hostname;
         this.key = key;
         this._start();
     }
@@ -143,12 +140,13 @@ class ProtoSession {
     }
 }
 
-export function startClientProxy(proxyUrl: string, port: number, hostname: string, key: Buffer) {
+export function startClientProxy(proxyUrl: string, port: number, key: string) {
     let _ws: WebSocket | null = null;
     let session: ProtoSession | null = null;
+    let keyValue = Buffer.from(key, 'base64');
 
     function onStart() {
-        session = new ProtoSession(_ws!, port, hostname, key);
+        session = new ProtoSession(_ws!, port, keyValue);
     }
 
     function onClose() {

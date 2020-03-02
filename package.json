@@ -7,14 +7,17 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc",
-    "start": "tsc && concurrently -n 'FRNT,BKND,CLNT' -c 'red,green,blue' --kill-others 'node ./dist/frontend.js' 'node ./dist/backend.js' 'node ./dist/client.js'",
+    "start": "tsc && concurrently -n 'FRNT,BKND,CLNT' -c 'red,green,blue' --kill-others 'node ./dist/frontend.js' 'node ./dist/backend.js' 'yarn cli:client'",
+    "cli:client": "node ./dist/cli.js client 'ws://localhost:9001' 'wWbHNsjWPhqUo2etM6vc3qedoKO9jgYLklql1h4vzf3AKWrvCFe38/PBSLZNgmC1igGAXTq6axEb64S95AMeBAAQdGVzdC5pb2ZzaGl0LmNvbQAAAAA='",
     "key": "tsc && node ./dist/newKey.js"
   },
   "dependencies": {
+    "@types/commander": "^2.12.2",
     "@types/express": "4.17.2",
     "@types/pino": "^5.15.5",
     "@types/uuid": "7.0.0",
     "@types/ws": "7.2.2",
+    "commander": "^4.1.1",
     "express": "4.17.1",
     "pino": "^5.17.0",
     "pino-pretty": "^3.6.0",

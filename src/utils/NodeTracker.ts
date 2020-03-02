@@ -16,13 +16,18 @@ export class NodeTracker {
     async start() {
         let activeBackends = new Set<string>();
         let frontendsTracker = new ResouceTracker((key: string) => {
-            // logger.info('Node disconnected: ' + key);
+            if (this.onNodeDisconnected) {
+                this.onNodeDisconnected(key);
+            }
         });
         await this.nc.subscribe('nodes', (err, msg) => {
             if (!Buffer.isBuffer(msg.data)) {
                 return;
             }
             let id = msg.data.toString('ascii');
+            if (id === this.selfId) {
+                return;
+            }
             if (!activeBackends.has(id)) {
                 activeBackends.add(id);
                 if (this.onNodeConnected) {

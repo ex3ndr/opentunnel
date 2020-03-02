@@ -1,13 +1,13 @@
 import * as uuid from 'uuid';
-import { NodeTracker } from '../utils/NodeTracker';
-import { FrontendSession } from '../frontend/FrontendSession';
-import { startTLSProxy } from "../frontend/startTLSProxy";
 import { connect, Payload } from 'ts-nats';
+import { NodeTracker } from '../utils/NodeTracker';
+import { FrontendSession } from './FrontendSession';
+import { startTLSProxy } from "./utils/startTLSProxy";
 import { createLogger } from '../utils/createLogger';
 
 const logger = createLogger('frontend');
 
-export async function startFrontendServer(port: number) {
+export async function startFrontend(port: number) {
     // Configure
     let id = uuid.v4();
     let nc = await connect({ payload: Payload.BINARY });

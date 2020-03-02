@@ -1,6 +1,6 @@
 import net from 'net';
-import { extractServerName } from './utils/extractServerName';
-import { createLogger } from '../utils/createLogger';
+import { extractServerName } from './extractServerName';
+import { createLogger } from '../../utils/createLogger';
 
 const logger = createLogger('frontend:proxy:')
 

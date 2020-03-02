@@ -10,7 +10,7 @@ export class FrontendSession {
     readonly id = uuid.v4();
     onDestroy?: () => void;
     onBackendSelected?: (id: string) => void;
-    
+
     private pendingFrames: Buffer[] = [];
     private nc: Client;
     private host: string;
@@ -77,7 +77,7 @@ export class FrontendSession {
             this.destroy();
             return;
         }
-        this.logger.info('Discovered backend socket: ' + this.backendSocketId);
+        this.logger.info('Discovered backend: ' + this.backendId);
         if (this.onBackendSelected) {
             this.onBackendSelected(this.backendId);
         }
@@ -110,7 +110,7 @@ export class FrontendSession {
                         this.pendingFrames = [];
                     }
                 } else if (msg.type === 'frame') {
-                    this.logger.info('<< ', msg.frame.length);
+                    this.logger.debug('<< ', msg.frame.length);
                     this.socket.write(msg.frame);
                 } else if (msg.type === 'aborted') {
                     this.logger.info('aborted');
@@ -131,7 +131,7 @@ export class FrontendSession {
         // No retrying here since we don't want to create multiple connections
         //
         try {
-            await this.nc.request('connect-' + this.backendSocketId, 5000, this.id);
+            await this.nc.request('connect-' + this.backendSocketId, 5000, Buffer.from(this.id, 'ascii'));
         } catch (e) {
             this.destroy();
             return;
@@ -152,7 +152,7 @@ export class FrontendSession {
     }
 
     private _onSocketFrame = (frame: Buffer) => {
-        this.logger.info(this.id + ': >> ' + frame.length);
+        this.logger.debug(' >> ' + frame.length);
         if (!this.started) {
             this.pendingFrames.push(frame);
         } else {
