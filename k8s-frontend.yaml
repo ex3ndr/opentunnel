@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opentunnel-frontend
+  labels:
+    app: opentunnel-frontend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: opentunnel-frontend
+  template:
+    metadata:
+      labels:
+        app: opentunnel-frontend
+    spec:
+      containers:
+        - name: opentunnel
+          image: ex3ndr/opentunnel:v2
+          command: ["node", "./cli.js"]
+          args: ["frontend", '-s', 'opentunnel-nats']
+          ports:
+            - containerPort: 9000
