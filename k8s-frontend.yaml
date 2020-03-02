@@ -16,8 +16,12 @@ spec:
     spec:
       containers:
         - name: opentunnel
-          image: ex3ndr/opentunnel:v2
+          image: ex3ndr/opentunnel:v5
           command: ["node", "./cli.js"]
           args: ["frontend", '-s', 'opentunnel-nats']
           ports:
             - containerPort: 9000
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 9002

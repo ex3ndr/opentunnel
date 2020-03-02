@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: opentunnel-frontend-lb
+spec:
+  selector:
+    app: opentunnel-frontend
+  ports:
+    - protocol: TCP
+      port: 443
+      targetPort: 9000
+      name: app
+    - protocol: TCP
+      port: 8080
+      targetPort: 9002
+      name: healthz
+  type: LoadBalancer

@@ -4,6 +4,7 @@ import { connect, Payload } from 'ts-nats';
 import { NodeTracker } from '../utils/NodeTracker';
 import { startAuthenticatedServer } from './startAuthenticatedServer';
 import { createLogger } from '../utils/createLogger';
+import { startHealthcheck } from '../utils/startHealthCheck';
 
 const logger = createLogger('backend');
 export async function startBackend(publicKey: string, port: number, nats?: string[]) {
@@ -31,4 +32,6 @@ export async function startBackend(publicKey: string, port: number, nats?: strin
         connections.set(backendSession.id, backendSession);
         backendSession.start();
     });
+
+    startHealthcheck(9003);
 }

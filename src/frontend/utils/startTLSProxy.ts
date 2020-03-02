@@ -15,6 +15,7 @@ export function startTLSProxy(port: number, handler: (socket: net.Socket, host: 
                     logger.info('New connection for ' + sname);
                     handler(connection, sname, data);
                 } else {
+                    logger.info('No hostname provided!');
                     if (!connection.destroyed) {
                         connection.destroy();
                         return;

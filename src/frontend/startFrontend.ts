@@ -4,6 +4,7 @@ import { NodeTracker } from '../utils/NodeTracker';
 import { FrontendSession } from './FrontendSession';
 import { startTLSProxy } from "./utils/startTLSProxy";
 import { createLogger } from '../utils/createLogger';
+import { startHealthcheck } from '../utils/startHealthCheck';
 
 const logger = createLogger('frontend');
 
@@ -34,4 +35,6 @@ export async function startFrontend(port: number, nats?: string[]) {
         activeSockets.set(frontendSocket.id, frontendSocket);
         frontendSocket.start();
     });
+
+    startHealthcheck(9002);
 }
