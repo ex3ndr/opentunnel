@@ -7,8 +7,10 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc",
-    "start": "tsc && concurrently -n 'FRNT,BKND,CLNT' -c 'red,green,blue' --kill-others 'node ./dist/frontend.js' 'node ./dist/backend.js' 'yarn cli:client'",
+    "start": "tsc && concurrently -n 'FRNT,BKND,CLNT' -c 'red,green,blue' --kill-others 'yarn cli:frontend' 'yarn cli:backend' 'yarn cli:client'",
     "cli:client": "node ./dist/cli.js client 'ws://localhost:9001' 'wWbHNsjWPhqUo2etM6vc3qedoKO9jgYLklql1h4vzf3AKWrvCFe38/PBSLZNgmC1igGAXTq6axEb64S95AMeBAAQdGVzdC5pb2ZzaGl0LmNvbQAAAAA='",
+    "cli:frontend": "node ./dist/cli.js frontend",
+    "cli:backend": "node ./dist/cli.js backend 'JGmVGhoC+ozGC3b+KuzGwtZfWehcMVKa2YfuG9Kd01A='",
     "key": "tsc && node ./dist/newKey.js"
   },
   "dependencies": {
