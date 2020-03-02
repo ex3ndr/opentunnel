@@ -1,27 +1,34 @@
+import { NodeTracker } from './utils/NodeTracker';
 import { BufferReader } from './utils/BufferReader';
 import { BufferWriter } from './utils/BufferWriter';
 import WebSocket from 'ws';
-import { ResouceTracker } from './utils/ResourceTracker';
-import { startBackendServer } from "./backend/startBackendServer";
-import { connect, Client, Subscription } from 'ts-nats';
+import { startAuthenticatedServer } from "./backend/startAuthenticatedServer";
+import { connect, Client, Subscription, Payload } from 'ts-nats';
 import * as uuid from 'uuid';
-import crc from 'node-crc';
+import { serializeDiscoverMessage } from './proto/discover';
+import { parseInnerSocketMessage, serializeInnerSocket } from './proto/innerSocket';
+import { createLogger } from './utils/createLogger';
+import fs from 'fs';
+
+const logger = createLogger('frontend');
 
 class BackendSession {
     readonly id = uuid.v4();
     readonly host: string;
     readonly ws: WebSocket;
     readonly nc: Client;
+    readonly backendId: string;
     private _timer: any;
     private _started = false;
     private _stopped = false;
     private _discoverSubscription!: Subscription;
     private _connectSubscription!: Subscription;
 
-    constructor(ws: WebSocket, host: string, nc: Client) {
+    constructor(ws: WebSocket, host: string, nc: Client, backendId: string) {
         this.ws = ws;
         this.nc = nc;
         this.host = host;
+        this.backendId = backendId;
         this._start();
     }
 
@@ -37,7 +44,7 @@ class BackendSession {
                 return;
             }
             if (data.reply) {
-                this.nc.publish(data.reply!, this.id);
+                this.nc.publish(data.reply!, serializeDiscoverMessage({ backend: this.backendId, socket: this.id }));
             }
         });
         if (this._stopped) {
@@ -77,29 +84,23 @@ class BackendSession {
             // Send Connected
             let writer = new BufferWriter();
             writer.appendUInt8(0);
-            this.nc.publish('connection-frontend-' + uid, writer.build().toString('hex'));
+            this.nc.publish('connection-frontend-' + uid, serializeInnerSocket({ type: 'connected' }));
         } else if (header === 1 /* Frame */) {
             let uidLength = reader.readUInt16();
             let uid = reader.readAsciiString(uidLength);
             let frameLength = reader.readUInt16();
             let frame = reader.readBuffer(frameLength);
-            console.log(uid + ': << ' + frameLength + ', crc:' + (crc.crc32(frame) as Buffer).toString('hex'));
+            console.log(uid + ': << ' + frameLength);
 
             // Send Frame
-            let writer = new BufferWriter();
-            writer.appendUInt8(1);
-            writer.appendUInt16(frameLength);
-            writer.appendBuffer(frame)
-            this.nc.publish('connection-frontend-' + uid, writer.build().toString('hex'));
+            this.nc.publish('connection-frontend-' + uid, serializeInnerSocket({ type: 'frame', frame }));
         } else if (header === 2 /* Abort */) {
             let uidLength = reader.readUInt16();
             let uid = reader.readAsciiString(uidLength);
             console.log(uid + ': Abort');
 
             // Send abort
-            let writer = new BufferWriter();
-            writer.appendUInt8(2);
-            this.nc.publish('connection-frontend-' + uid, writer.build().toString('hex'));
+            this.nc.publish('connection-frontend-' + uid, serializeInnerSocket({ type: 'aborted' }));
         }
     }
 
@@ -107,15 +108,21 @@ class BackendSession {
         // Create new connection
         (async () => {
             await this.nc.subscribe('connection-backend-' + id, (error, data) => {
-                let body = Buffer.from(data.data, 'hex');
-                let writer = new BufferWriter();
-                writer.appendUInt8(1);
-                writer.appendUInt16(id.length);
-                writer.appendAsciiString(id);
-                writer.appendUInt16(body.length);
-                writer.appendBuffer(body);
-                this.ws.send(writer.build());
-                console.log(id + ': >> ' + body.length + ', crc:' + (crc.crc32(body) as Buffer).toString('hex'));
+                let msg = parseInnerSocketMessage(data.data);
+                if (!msg) {
+                    return; // Just ignore unknown
+                }
+
+                if (msg.type === 'frame') {
+                    let writer = new BufferWriter();
+                    writer.appendUInt8(1);
+                    writer.appendUInt16(id.length);
+                    writer.appendAsciiString(id);
+                    writer.appendUInt16(msg.frame.length);
+                    writer.appendBuffer(msg.frame);
+                    this.ws.send(writer.build());
+                    console.log(id + ': >> ' + msg.frame.length);
+                }
             });
 
             // Init connection
@@ -152,63 +159,45 @@ class BackendSession {
 
 (async () => {
     let id = uuid.v4();
-    let nc = await connect();
+    let nc = await connect({ payload: Payload.BINARY });
+    let publicKey = fs.readFileSync('auth_public.key', 'ascii');
 
-    // Tracking frontends
-    let activeFrontends = new Set<string>();
-    let frontendsTracker = new ResouceTracker((key: string) => {
-        console.log('Frontend disappeared: ' + key);
-    });
-    nc.subscribe('frontends', (err, msg) => {
-        if (typeof msg.data !== 'string') {
-            return;
-        }
-        if (!activeFrontends.has(msg.data)) {
-            activeFrontends.add(msg.data);
-            console.log('Frontend appeared: ' + msg.data);
-        }
-        frontendsTracker.addResource(msg.data);
-    });
-
-    // Broadcasting keep alive
-    nc.publish('backends', id);
-    setInterval(() => {
-        nc.publish('backends', id);
-    }, 1000);
+    // Tracking nodes
+    let nodeTracker = new NodeTracker(id, nc);
+    nodeTracker.onNodeConnected = (id: string) => {
+        logger.info('Node connected: ' + id);
+    }
+    nodeTracker.onNodeDisconnected = (id: string) => {
+        logger.info('Node disconnected: ' + id);
+    }
+    await nodeTracker.start();
 
 
     // Start backend WS server
-
     let connections = new Map<string, BackendSession>();
-
-    startBackendServer(9001, (host, key, ws) => {
+    startAuthenticatedServer(publicKey, 9001, (host, ws) => {
         host = host.toLowerCase();
-        console.log('Received: ' + host + ', ' + key);
-        if (host === 'test.iofshit.com') {
-            if (key === 'randomkey') {
-                if (connections.has(host)) {
-                    let ex = connections.get(host)!;
-                    connections.delete(host);
-                    ex.destroy();
-                }
-                connections.set(host, new BackendSession(ws, host, nc));
-                ws.on('close', () => {
-                    if (connections.has(host)) {
-                        let ex = connections.get(host)!;
-                        connections.delete(host);
-                        ex.destroy();
-                    }
-                });
-                ws.on('error', () => {
-                    if (connections.has(host)) {
-                        let ex = connections.get(host)!;
-                        connections.delete(host);
-                        ex.destroy();
-                    }
-                });
-                return;
-            }
+        console.log('Received: ' + host);
+
+        if (connections.has(host)) {
+            let ex = connections.get(host)!;
+            connections.delete(host);
+            ex.destroy();
         }
-        ws.close();
+        connections.set(host, new BackendSession(ws, host, nc, id));
+        ws.on('close', () => {
+            if (connections.has(host)) {
+                let ex = connections.get(host)!;
+                connections.delete(host);
+                ex.destroy();
+            }
+        });
+        ws.on('error', () => {
+            if (connections.has(host)) {
+                let ex = connections.get(host)!;
+                connections.delete(host);
+                ex.destroy();
+            }
+        });
     });
 })();

@@ -1,2 +1,4 @@
 node_modules
 dist
+auth_secret.key
+auth_public.key

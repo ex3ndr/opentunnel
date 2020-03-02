@@ -13,6 +13,12 @@ export class BufferWriter {
         this._buffer = Buffer.concat([this._buffer, b]);
     }
 
+    appendUInt32(value: number) {
+        let b = Buffer.alloc(4);
+        b.writeUInt32BE(value, 0);
+        this._buffer = Buffer.concat([this._buffer, b]);
+    }
+
     appendAsciiString(value: string) {
         let b = Buffer.from(value, 'ascii');
         this._buffer = Buffer.concat([this._buffer, b]);

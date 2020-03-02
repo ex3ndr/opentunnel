@@ -24,6 +24,15 @@ export class BufferReader {
         return res;
     }
 
+    readUInt32() {
+        if (this.buffer.length < this._offset + 4) {
+            throw Error('EOF');
+        }
+        let res = this.buffer.readUInt32BE(this._offset);
+        this._offset += 4;
+        return res;
+    }
+
     readAsciiString(length: number) {
         if (this.buffer.length < this._offset + length) {
             throw Error('EOF');

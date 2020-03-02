@@ -1,8 +1,7 @@
+import net from 'net';
+import WebSocket from 'ws';
 import { BufferReader } from './../utils/BufferReader';
 import { BufferWriter } from './../utils/BufferWriter';
-import WebSocket from 'ws';
-import net from 'net';
-import crc from 'node-crc';
 
 class ProtoConnection {
     readonly ws: WebSocket;
@@ -32,7 +31,7 @@ class ProtoConnection {
         });
         this._socket.on('data', (data) => {
             if (!closed) {
-                console.log(this.uid + ': << ' + data.length + ', crc:' + (crc.crc32(data) as Buffer).toString('hex'));
+                console.log(this.uid + ': << ' + data.length);
                 let buffer = new BufferWriter();
                 buffer.appendUInt8(1);
                 buffer.appendUInt16(this.uid.length);
@@ -70,7 +69,7 @@ class ProtoConnection {
     }
 
     onFrame = (buffer: Buffer) => {
-        console.log(this.uid + ': >> ' + buffer.length + ', crc:' + (crc.crc32(buffer) as Buffer).toString('hex'));
+        console.log(this.uid + ': >> ' + buffer.length);
         let r = this._socket.write(buffer); // Handle result??
         console.log(this.uid + ': ' + r);
     }
@@ -90,10 +89,10 @@ class ProtoSession {
     private ws: WebSocket;
     private port: number;
     private hostname: string;
-    private key: string;
+    private key: Buffer;
     private connections = new Map<string, ProtoConnection>();
 
-    constructor(ws: WebSocket, port: number, hostname: string, key: string) {
+    constructor(ws: WebSocket, port: number, hostname: string, key: Buffer) {
         this.ws = ws;
         this.port = port;
         this.hostname = hostname;
@@ -106,10 +105,8 @@ class ProtoSession {
 
         let builder = new BufferWriter();
         builder.appendUInt8(0);
-        builder.appendUInt16(this.hostname.length);
-        builder.appendAsciiString(this.hostname);
         builder.appendUInt16(this.key.length);
-        builder.appendAsciiString(this.key);
+        builder.appendBuffer(this.key);
         this.ws.send(builder.build());
     }
 
@@ -146,7 +143,7 @@ class ProtoSession {
     }
 }
 
-export function startClientProxy(proxyUrl: string, port: number, hostname: string, key: string) {
+export function startClientProxy(proxyUrl: string, port: number, hostname: string, key: Buffer) {
     let _ws: WebSocket | null = null;
     let session: ProtoSession | null = null;
 

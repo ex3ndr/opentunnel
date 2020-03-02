@@ -1,35 +1,37 @@
-import net from 'net';
-import { extractServerName } from './utils/extractServerName';
-import crc from 'node-crc';
+import * as uuid from 'uuid';
+import { NodeTracker } from '../utils/NodeTracker';
+import { FrontendSession } from '../frontend/FrontendSession';
+import { startTLSProxy } from "../frontend/startTLSProxy";
+import { connect, Payload } from 'ts-nats';
+import { createLogger } from '../utils/createLogger';
 
-export function startFrontendServer(port: number, handler: (host: string, socket: net.Socket, header: Buffer) => void) {
+const logger = createLogger('frontend');
 
-    let server = net.createServer((connection) => {
-        let started = false;
-        connection.on('data', (data) => {
-            console.log('crc:' + (crc.crc32(data) as Buffer).toString('hex'));
-            if (!started) {
-                let sname = extractServerName(data);
-                if (sname) {
-                    handler(sname, connection, data);
-                } else {
-                    if (!connection.destroyed) {
-                        connection.destroy();
-                        return;
-                    }
-                }
-                started = true;
-            }
-        });
-        connection.on('error', () => {
-            console.log('Error');
-        });
-        connection.on('close', () => {
-            console.log('Closed');
-        });
-    });
+export async function startFrontendServer(port: number) {
+    // Configure
+    let id = uuid.v4();
+    let nc = await connect({ payload: Payload.BINARY });
 
-    server.listen(port, () => {
-        console.log('Frontend started at port: ' + port);
+    // State
+    let activeSockets = new Map<string, FrontendSession>();
+
+    // Node tracking
+    let nodeTracker = new NodeTracker(id, nc);
+    nodeTracker.onNodeConnected = (id: string) => {
+        logger.info('Node connected: ' + id);
+    }
+    nodeTracker.onNodeDisconnected = (id: string) => {
+        logger.info('Node disconnected: ' + id);
+    }
+    await nodeTracker.start();
+
+    // Start
+    startTLSProxy(port, (socket, host, header) => {
+        let frontendSocket = new FrontendSession(nc, host, header, socket);
+        frontendSocket.onDestroy = () => {
+            activeSockets.delete(frontendSocket.id);
+        }
+        activeSockets.set(frontendSocket.id, frontendSocket);
+        frontendSocket.start();
     });
 }
