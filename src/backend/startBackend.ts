@@ -6,9 +6,9 @@ import { startAuthenticatedServer } from './startAuthenticatedServer';
 import { createLogger } from '../utils/createLogger';
 
 const logger = createLogger('backend');
-export async function startBackend(publicKey: string, port: number) {
+export async function startBackend(publicKey: string, port: number, nats?: string[]) {
     let id = uuid.v4();
-    let nc = await connect({ payload: Payload.BINARY });
+    let nc = await connect({ payload: Payload.BINARY, servers: nats });
 
     // Tracking nodes
     let nodeTracker = new NodeTracker(id, nc);
@@ -23,7 +23,7 @@ export async function startBackend(publicKey: string, port: number) {
 
     // Start backend WS server
     let connections = new Map<string, BackendSession>();
-    startAuthenticatedServer(publicKey, 9001, (host, ws) => {
+    startAuthenticatedServer(publicKey, port, (host, ws) => {
         let backendSession = new BackendSession(ws, host, nc, id);
         backendSession.onDestroy = () => {
             connections.delete(backendSession.id);

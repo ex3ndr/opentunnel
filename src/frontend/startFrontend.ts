@@ -7,10 +7,10 @@ import { createLogger } from '../utils/createLogger';
 
 const logger = createLogger('frontend');
 
-export async function startFrontend(port: number) {
+export async function startFrontend(port: number, nats?: string[]) {
     // Configure
     let id = uuid.v4();
-    let nc = await connect({ payload: Payload.BINARY });
+    let nc = await connect({ payload: Payload.BINARY, servers: nats });
 
     // State
     let activeSockets = new Map<string, FrontendSession>();
