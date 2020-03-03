@@ -1,5 +1,5 @@
 import program from 'commander';
-import { startClientProxy } from "./client/startClientProxy";
+import { startClient } from "./client/startClient";
 import { startFrontend } from './frontend/startFrontend';
 import { startBackend } from './backend/startBackend';
 
@@ -16,7 +16,7 @@ program
         let httpPort = cmdObj.Ph ? parseInt(cmdObj.Ph) : 80;
         let key = keyP as string;
         let host = hostP as string;
-        startClientProxy(host, port, httpPort, key);
+        startClient(host, port, httpPort, key);
     });
 program
     .command('frontend')
