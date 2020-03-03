@@ -10,19 +10,23 @@ function commaSeparatedList(value: string) {
 program
     .command('client <url> <key>')
     .option('-p <port>', 'Local port')
+    .option('-ph <port>', 'Listening http port')
     .action(function (hostP, keyP, cmdObj) {
         let port = cmdObj.P ? parseInt(cmdObj.P) : 443;
+        let httpPort = cmdObj.Ph ? parseInt(cmdObj.Ph) : 80;
         let key = keyP as string;
         let host = hostP as string;
-        startClientProxy(host, port, key);
+        startClientProxy(host, port, httpPort, key);
     });
 program
     .command('frontend')
     .option('-p <port>', 'Listening port')
+    .option('-ph <port>', 'Listening http port')
     .option('-s <servers>', 'NATS server endpoints', commaSeparatedList)
     .action(function (cmdObj) {
         let port = cmdObj.P ? parseInt(cmdObj.P) : 9000;
-        startFrontend(port, cmdObj.S);
+        let httpPort = cmdObj.Ph ? parseInt(cmdObj.P) : 9005;
+        startFrontend(port, httpPort, cmdObj.S);
     });
 program
     .command('backend <key>')

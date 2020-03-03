@@ -1,7 +1,8 @@
 import net from 'net';
 import WebSocket from 'ws';
-import { BufferReader } from './../utils/BufferReader';
+import fetch from 'node-fetch';
 import { BufferWriter } from './../utils/BufferWriter';
+import { parseClientProto, serializeClientProto } from '../proto/clientProto';
 
 class ProtoConnection {
     readonly ws: WebSocket;
@@ -22,23 +23,13 @@ class ProtoConnection {
         this._socket.on('connect', () => {
             if (!closed) {
                 console.log(this.uid + ': Connected');
-                let buffer = new BufferWriter();
-                buffer.appendUInt8(0);
-                buffer.appendUInt16(this.uid.length);
-                buffer.appendAsciiString(this.uid);
-                this.ws.send(buffer.build());
+                this.ws.send(serializeClientProto({ type: 'connected', id: this.uid }));
             }
         });
         this._socket.on('data', (data) => {
             if (!closed) {
                 console.log(this.uid + ': << ' + data.length);
-                let buffer = new BufferWriter();
-                buffer.appendUInt8(1);
-                buffer.appendUInt16(this.uid.length);
-                buffer.appendAsciiString(this.uid);
-                buffer.appendUInt16(data.length);
-                buffer.appendBuffer(data);
-                this.ws.send(buffer.build());
+                this.ws.send(serializeClientProto({ type: 'frame', id: this.uid, frame: data }));
             }
         });
         this._socket.on('error', () => {
@@ -46,23 +37,14 @@ class ProtoConnection {
                 closed = true;
 
                 console.log(this.uid + ': Error');
-                let buffer = new BufferWriter();
-                buffer.appendUInt8(2);
-                buffer.appendUInt16(this.uid.length);
-                buffer.appendAsciiString(this.uid);
-                this.ws.send(buffer.build());
+                this.ws.send(serializeClientProto({ type: 'aborted', id: this.uid }));
             }
         });
         this._socket.on('close', () => {
             if (!closed) {
                 closed = true;
-
                 console.log(this.uid + ': Closed');
-                let buffer = new BufferWriter();
-                buffer.appendUInt8(2);
-                buffer.appendUInt16(this.uid.length);
-                buffer.appendAsciiString(this.uid);
-                this.ws.send(buffer.build());
+                this.ws.send(serializeClientProto({ type: 'aborted', id: this.uid }));
             }
         });
         this._socket.connect(this.port);
@@ -87,19 +69,20 @@ class ProtoConnection {
 class ProtoSession {
     private ws: WebSocket;
     private port: number;
+    private httpPort: number;
     private key: Buffer;
     private connections = new Map<string, ProtoConnection>();
 
-    constructor(ws: WebSocket, port: number, key: Buffer) {
+    constructor(ws: WebSocket, port: number, httpPort: number, key: Buffer) {
         this.ws = ws;
         this.port = port;
+        this.httpPort = httpPort;
         this.key = key;
         this._start();
     }
 
     private _start = () => {
         this.ws.on('message', this._handleMessage);
-
         let builder = new BufferWriter();
         builder.appendUInt8(0);
         builder.appendUInt16(this.key.length);
@@ -115,23 +98,34 @@ class ProtoSession {
         if (!Buffer.isBuffer(buffer)) {
             return;
         }
-        let reader = new BufferReader(buffer);
-        let header = reader.readUInt8();
-        if (header === 0) {
-            let size = reader.readUInt16();
-            let uid = reader.readAsciiString(size);
-            console.log(uid + ': Request connect');
-            this.connections.set(uid, new ProtoConnection(this.ws, this.port, uid));
-        } else if (header === 1) {
-            let size = reader.readUInt16();
-            let uid = reader.readAsciiString(size);
-            let len = reader.readUInt16();
-            let frame = reader.readBuffer(len);
-            this.connections.get(uid)!.onFrame(frame);
-        } else if (header === 2) {
-            let size = reader.readUInt16();
-            let uid = reader.readAsciiString(size);
-            this.connections.get(uid)!.close();
+        let message = parseClientProto(buffer);
+        if (!message) {
+            return;
+        }
+
+        if (message.type === 'connected') {
+            console.log(message.id + ': Request connect');
+            this.connections.set(message.id, new ProtoConnection(this.ws, this.port, message.id));
+        } else if (message.type === 'frame') {
+            this.connections.get(message.id)!.onFrame(message.frame);
+        } else if (message.type === 'aborted') {
+            this.connections.get(message.id)!.close();
+        } else if (message.type === 'wk-request') {
+            console.log(message.requestId + ': Well-known request at ' + message.path);
+            (async () => {
+                try {
+                    let res = await fetch('http://localhost:' + this.httpPort + '/.well-known' + message.path);
+                    if (res.ok) {
+                        console.log(res);
+                        let ex = await res.buffer();
+                        this.ws.send(serializeClientProto({ type: 'wk-response', requestId: message.requestId, content: ex }));
+                    } else {
+                        this.ws.send(serializeClientProto({ type: 'wk-response', requestId: message.requestId, content: null }));
+                    }
+                } catch (e) {
+                    this.ws.send(serializeClientProto({ type: 'wk-response', requestId: message.requestId, content: null }));
+                }
+            })();
         }
     }
 
@@ -140,13 +134,13 @@ class ProtoSession {
     }
 }
 
-export function startClientProxy(proxyUrl: string, port: number, key: string) {
+export function startClientProxy(proxyUrl: string, port: number, httpPort: number, key: string) {
     let _ws: WebSocket | null = null;
     let session: ProtoSession | null = null;
     let keyValue = Buffer.from(key, 'base64');
 
     function onStart() {
-        session = new ProtoSession(_ws!, port, keyValue);
+        session = new ProtoSession(_ws!, port, httpPort, keyValue);
     }
 
     function onClose() {

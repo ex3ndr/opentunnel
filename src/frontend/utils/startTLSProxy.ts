@@ -2,11 +2,12 @@ import net from 'net';
 import { extractServerName } from './extractServerName';
 import { createLogger } from '../../utils/createLogger';
 
-const logger = createLogger('frontend:proxy:')
+const logger = createLogger('frontend:tls:')
 
 export function startTLSProxy(port: number, handler: (socket: net.Socket, host: string, header: Buffer) => void) {
 
     let server = net.createServer((connection) => {
+        logger.info('New connection');
         let started = false;
         connection.on('data', (data) => {
             if (!started) {

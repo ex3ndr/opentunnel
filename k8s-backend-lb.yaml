@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: opentunnel-backend-lb
+spec:
+  selector:
+    app: opentunnel-backend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 9001
+      name: app
+  type: NodePort

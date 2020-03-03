@@ -3,20 +3,20 @@ kind: Deployment
 metadata:
   name: opentunnel-backend
   labels:
-    app: opentunnel-frontend
+    app: opentunnel-backend
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: opentunnel-frontend
+      app: opentunnel-backend
   template:
     metadata:
       labels:
-        app: opentunnel-frontend
+        app: opentunnel-backend
     spec:
       containers:
         - name: opentunnel
-          image: ex3ndr/opentunnel:v5
+          image: ex3ndr/opentunnel:v16
           command: ['node', './cli.js']
           args:
             [

@@ -73,7 +73,6 @@ export class FrontendSession {
         }
         if (!this.backendSocketId || !this.backendId) {
             this.logger.info('Failed to discover backend socket for ' + this.host);
-            this.destroyed = true;
             this.destroy();
             return;
         }

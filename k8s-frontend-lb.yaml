@@ -11,7 +11,7 @@ spec:
       targetPort: 9000
       name: app
     - protocol: TCP
-      port: 8080
-      targetPort: 9002
-      name: healthz
-  type: LoadBalancer
+      port: 80
+      targetPort: 9005
+      name: app-http
+  type: NodePort

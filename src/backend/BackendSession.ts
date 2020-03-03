@@ -16,9 +16,11 @@ export class BackendSession {
     private _started = false;
     private _stopped = false;
     private _discoverSubscription!: Subscription;
+    private _wkSubscription!: Subscription;
     private _connectSubscription!: Subscription;
     private _connections = new Map<string, Subscription>();
     private _logger = createLogger('backend:session:' + this.id);
+    private _wkRequests = new Map<string, string>();
 
     constructor(ws: WebSocket, host: string, nc: Client, backendId: string) {
         this.ws = ws;
@@ -66,6 +68,29 @@ export class BackendSession {
             return;
         }
 
+        // Subscribe for wellknown
+        try {
+            this._wkSubscription = await this.nc.subscribe('wk-' + this.id, (err, data) => {
+                if (!this._started || this._stopped) {
+                    return;
+                }
+                if (data.reply) {
+                    let id = uuid.v4();
+                    this._wkRequests.set(id, data.reply);
+
+                    let path = (data.data as Buffer).toString('ascii');
+                    this.ws.send(serializeClientProto({ type: 'wk-request', requestId: id, path }));
+                }
+            });
+        } catch (e) {
+            this.destroy();
+            return;
+        }
+        if (this._stopped) {
+            this._wkSubscription.unsubscribe();
+            return;
+        }
+
         // Subscribe for incoming request for this session
         try {
             this._connectSubscription = await this.nc.subscribe('connect-' + this.id, (err, data) => {
@@ -99,20 +124,31 @@ export class BackendSession {
     }
 
     private _onBackendMessage = (msg: ClientMessage) => {
-        if (!this._connections.has(msg.id)) { // Ignore unknown connections
-            return;
-        }
         if (msg.type === 'connected') {
+            if (!this._connections.has(msg.id)) {
+                return;
+            }
             this.nc.publish('connection-frontend-' + msg.id, serializeInnerSocket({ type: 'connected' }));
         } else if (msg.type === 'frame') {
+            if (!this._connections.has(msg.id)) {
+                return;
+            }
             this.nc.publish('connection-frontend-' + msg.id, serializeInnerSocket({ type: 'frame', frame: msg.frame }));
         } else if (msg.type === 'aborted') {
+            if (!this._connections.has(msg.id)) {
+                return;
+            }
             this.nc.publish('connection-frontend-' + msg.id, serializeInnerSocket({ type: 'aborted' }));
             this._logger.info('connection aborted');
             this._connections.get(msg.id)!.unsubscribe();
             this._connections.delete(msg.id);
-        } else {
+        } else if (msg.type === 'wk-response') {
             // Just ignore
+            if (this._wkRequests.has(msg.requestId)) {
+                let reply = this._wkRequests.get(msg.requestId)!;
+                this._wkRequests.delete(msg.requestId);
+                this.nc.publish(reply, msg.content);
+            }
         }
     }
 
@@ -170,6 +206,9 @@ export class BackendSession {
             }
             if (this._connectSubscription) {
                 this._connectSubscription.unsubscribe();
+            }
+            if (this._wkSubscription) {
+                this._wkSubscription.unsubscribe();
             }
             for (let c of this._connections.values()) {
                 c.unsubscribe();

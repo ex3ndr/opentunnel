@@ -5,10 +5,12 @@ import { FrontendSession } from './FrontendSession';
 import { startTLSProxy } from "./utils/startTLSProxy";
 import { createLogger } from '../utils/createLogger';
 import { startHealthcheck } from '../utils/startHealthCheck';
+import { startHTTPProxy } from './utils/startHTTPproxy';
+import { requestWellKnown } from './requestWellKnown';
 
 const logger = createLogger('frontend');
 
-export async function startFrontend(port: number, nats?: string[]) {
+export async function startFrontend(tlsPort: number, httpPort: number, nats?: string[]) {
     // Configure
     let id = uuid.v4();
     let nc = await connect({ payload: Payload.BINARY, servers: nats });
@@ -27,13 +29,17 @@ export async function startFrontend(port: number, nats?: string[]) {
     await nodeTracker.start();
 
     // Start
-    startTLSProxy(port, (socket, host, header) => {
+    startTLSProxy(tlsPort, (socket, host, header) => {
         let frontendSocket = new FrontendSession(nc, host, header, socket);
         frontendSocket.onDestroy = () => {
             activeSockets.delete(frontendSocket.id);
         }
         activeSockets.set(frontendSocket.id, frontendSocket);
         frontendSocket.start();
+    });
+
+    startHTTPProxy(httpPort, (host, path) => {
+        return requestWellKnown(nc, host, path);
     });
 
     startHealthcheck(9002);
