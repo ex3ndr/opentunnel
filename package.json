@@ -1,6 +1,6 @@
 {
   "name": "opentunnel",
-  "version": "0.0.16",
+  "version": "0.0.22",
   "main": "dist/index.js",
   "repository": "https://github.com/ex3ndr/opentunnel.git",
   "author": "Steve Korshakov <steve@korshakov.com>",
@@ -24,6 +24,7 @@
     "@types/ws": "7.2.2",
     "commander": "^4.1.1",
     "express": "4.17.1",
+    "inspirational-quotes": "^1.0.8",
     "node-fetch": "^2.6.0",
     "pino": "^5.17.0",
     "pino-pretty": "^3.6.0",

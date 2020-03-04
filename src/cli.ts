@@ -2,6 +2,7 @@ import program from 'commander';
 import { startClient } from "./client/startClient";
 import { startFrontend } from './frontend/startFrontend';
 import { startBackend } from './backend/startBackend';
+import { startRegistrator } from './registrator/startRegistrator';
 
 function commaSeparatedList(value: string) {
     return value.split(',');
@@ -36,5 +37,13 @@ program
         let key = keyP as string;
         let port = cmdObj.P ? parseInt(cmdObj.P) : 9001;
         startBackend(key, port, cmdObj.S);
+    });
+program
+    .command('registrator <host>')
+    .option('-p <port>', 'Listening port')
+    .action(function (hostP, cmdObj) {
+        let host = hostP as string;
+        let port = cmdObj.P ? parseInt(cmdObj.P) : 9001;
+        startRegistrator(port, host);
     });
 program.parse(process.argv);

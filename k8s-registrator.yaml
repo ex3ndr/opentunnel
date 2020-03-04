@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opentunnel-registrator
+  labels:
+    app: opentunnel-registrator
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: opentunnel-registrator
+  template:
+    metadata:
+      labels:
+        app: opentunnel-registrator
+    spec:
+      containers:
+        - name: opentunnel
+          image: ex3ndr/opentunnel:v22
+          command: ['node', './cli.js']
+          args: ['registrator', 'orcarium.com']
+          env:
+            - name: REG_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: registrator-key
+                  key: key          
+          ports:
+            - containerPort: 9001
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 9001
