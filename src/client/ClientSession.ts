@@ -14,7 +14,7 @@ export class ClientSession {
     private key: Buffer;
     private connections = new Map<string, ClientConnection>();
 
-    constructor(port: number, httpPort: number, key: Buffer, ws: WebSocket, ) {
+    constructor(port: number, httpPort: number, key: Buffer, ws: WebSocket) {
         this.port = port;
         this.httpPort = httpPort;
         this.key = key;
@@ -43,7 +43,7 @@ export class ClientSession {
         }
 
         if (message.type === 'connected') {
-            logger.log(message.id + ': New connection');
+            logger.info(message.id + ': New connection');
             let id = message.id;
             let connection = new ClientConnection(this.port, id, this.ws);
             connection.onAborted = () => {
@@ -52,11 +52,17 @@ export class ClientSession {
             this.connections.set(message.id, connection);
             connection.start();
         } else if (message.type === 'frame') {
+            if (!this.connections.has(message.id)) {
+                return;
+            }
             this.connections.get(message.id)!.onFrame(message.frame);
         } else if (message.type === 'aborted') {
+            if (!this.connections.has(message.id)) {
+                return;
+            }
             this.connections.get(message.id)!.close();
         } else if (message.type === 'wk-request') {
-            logger.log(message.requestId + ': Well-known request at ' + message.path);
+            logger.info(message.requestId + ': Well-known request at ' + message.path);
             (async () => {
                 try {
                     let res = await fetch('http://localhost:' + this.httpPort + '/.well-known' + message.path);
@@ -75,7 +81,7 @@ export class ClientSession {
 
     destroy() {
         this.ws.off('message', this._handleMessage);
-        for(let c of this.connections) {
+        for (let c of this.connections) {
             c[1].close();
         }
     }

@@ -8,10 +8,10 @@
   "scripts": {
     "build": "tsc",
     "start": "tsc && concurrently -n 'FRNT,BKND,CLNT' -c 'red,green,blue' --kill-others 'yarn cli:frontend' 'yarn cli:backend' 'yarn cli:client'",
-    "cli:client": "node ./dist/cli.js client 'ws://localhost:9001' 'wWbHNsjWPhqUo2etM6vc3qedoKO9jgYLklql1h4vzf3AKWrvCFe38/PBSLZNgmC1igGAXTq6axEb64S95AMeBAAQdGVzdC5pb2ZzaGl0LmNvbQAAAAA='",
+    "cli:client": "node ./dist/cli.js client 'wWbHNsjWPhqUo2etM6vc3qedoKO9jgYLklql1h4vzf3AKWrvCFe38/PBSLZNgmC1igGAXTq6axEb64S95AMeBAAQdGVzdC5pb2ZzaGl0LmNvbQAAAAA=' -s 'ws://localhost:9001'",
     "cli:frontend": "node ./dist/cli.js frontend",
     "cli:backend": "node ./dist/cli.js backend 'JGmVGhoC+ozGC3b+KuzGwtZfWehcMVKa2YfuG9Kd01A='",
-    "cli:test": "node ./dist/cli.js client 'wss://backhaul.orcarium.com' '9i5VkYAejdy7kIzEGARaq9n9hqd9mMSqkRuS4hJHEwJYQH0KRqGPs6hLj77jDp1nhBsbI6bULaAt4+09b9X3CwARdGVzdC5vcmNhcml1bS5jb20AAAAA'",
+    "cli:test": "node ./dist/cli.js client 'OWfa6cfwLG3alP7GUme30HmiwovrtE4uDQqKxVuttcFU52WdWmJS+j2BiE5Tb6Ipi71QsBL+omhg/tWEMQrhAQAtNmQ0MjI5ZjdhNmY3NDk0Yzk4NWEyMmU1ODZlMzI2Yjcub3JjYXJpdW0uY29tAAAAAA=='",
     "key": "tsc && node ./dist/newKey.js",
     "docker": "./scripts/increment_version.js && ./scripts/docker.sh"
   },

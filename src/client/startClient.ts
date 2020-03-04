@@ -42,19 +42,19 @@ export function startClient(proxyUrl: string, port: number, httpPort: number, ke
         let ws = new WebSocket(proxyUrl);
         ws.on('open', () => {
             if (_ws === ws) {
-                logger.log('Connected');
+                logger.info('Connected');
                 session = new ClientSession(port, httpPort, keyValue, ws);
             }
         });
         ws.on('close', () => {
             if (_ws === ws) {
-                logger.log('Backhaul disconnected');
+                logger.info('Backhaul disconnected');
                 onClose();
             }
         });
         ws.on('error', () => {
             if (_ws === ws) {
-                logger.log('Backhaul connection error');
+                logger.info('Backhaul connection error');
                 onClose();
             }
         });
