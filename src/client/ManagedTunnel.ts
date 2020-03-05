@@ -12,6 +12,7 @@ export interface ManagedTunnelConfig {
     host?: string | undefined | null;
     token?: string | undefined | null;
 
+    acmeAccountKey?: string | undefined | null;
     certificate?: { chain: string, certificate: string, privateKey: string };
 }
 
@@ -26,6 +27,7 @@ export class ManagedTunnel {
 
     onHostnameRegistered?: (host: string, token: string) => Promise<void>;
     onCertificateUpdated?: (cert: { chain: string, certificate: string, privateKey: string }) => Promise<void>;
+    onACMEAccountKeyCreated?: (accountKey: string) => Promise<void>;
 
     constructor(
         port: number,
@@ -139,10 +141,22 @@ export class ManagedTunnel {
     }
 
     private _fetchNewCertificates = async () => {
+
+        // Reuse account key
+        if (!this._config.acmeAccountKey) {
+            let accountKey = await acme.forge.createPrivateKey();
+            let rawKey = accountKey.toString('base64');
+            if (this.onACMEAccountKeyCreated) {
+                await this.onACMEAccountKeyCreated(rawKey);
+            }
+            this._config.acmeAccountKey = rawKey;
+        }
+        let accountKey: Buffer = Buffer.from(this._config.acmeAccountKey, 'base64');
+
         try {
             const client = new acme.Client({
                 directoryUrl: acme.directory.letsencrypt.production,
-                accountKey: await acme.forge.createPrivateKey(),
+                accountKey: accountKey,
             });
 
             const [key, csr] = await acme.forge.createCsr({
@@ -168,7 +182,7 @@ export class ManagedTunnel {
                 .map((s) => `${s}\n`);
             let privateKey = key.toString();
             let chain = chainArray.join('\n');
-            let certificate = chain[0];
+            let certificate = chainArray[0];
             return { privateKey, chain, certificate };
         } catch (e) {
             logger.warn('Unable to generate certificate');

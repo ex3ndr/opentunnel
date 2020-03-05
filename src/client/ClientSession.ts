@@ -2,9 +2,6 @@ import WebSocket from 'ws';
 import { ClientConnection } from './ClientConnection';
 import { BufferWriter } from './../utils/BufferWriter';
 import { parseClientProto, serializeClientProto } from '../proto/clientProto';
-import { createLogger } from '../utils/createLogger';
-
-const logger = createLogger('client');
 
 export class ClientSession {
     private ws: WebSocket;
@@ -42,7 +39,6 @@ export class ClientSession {
         }
 
         if (message.type === 'connected') {
-            logger.info(message.id + ': New connection');
             let id = message.id;
             let connection = new ClientConnection(this.port, id, this.ws);
             connection.onAborted = () => {
@@ -61,7 +57,7 @@ export class ClientSession {
             }
             this.connections.get(message.id)!.close();
         } else if (message.type === 'wk-request') {
-            logger.info(message.requestId + ': Well-known request at ' + message.path);
+            // logger.info(message.requestId + ': Well-known request at ' + message.path);
             (async () => {
                 try {
                     let res = await this.wkHandler(message.path);

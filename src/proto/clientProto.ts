@@ -6,7 +6,8 @@ export type ClientMessage =
     | { id: string, type: 'aborted' }
     | { id: string, type: 'frame', frame: Buffer }
     | { type: 'wk-request', requestId: string, path: string }
-    | { type: 'wk-response', requestId: string, content: Buffer | null };
+    | { type: 'wk-response', requestId: string, content: Buffer | null }
+    | { type: 'ka' };
 
 export function parseClientProto(buffer: Buffer): ClientMessage | null {
     let reader = new BufferReader(buffer);
@@ -42,6 +43,8 @@ export function parseClientProto(buffer: Buffer): ClientMessage | null {
             body = reader.readBuffer(bodyLength);
         }
         return { type: 'wk-response', requestId, content: body };
+    } else if (header === 5 /* Keep Alive */) {
+        return { type: 'ka' };
     }
 
     return null;
@@ -80,6 +83,8 @@ export function serializeClientProto(msg: ClientMessage): Buffer {
         } else {
             writer.appendUInt8(0);
         }
+    } else if (msg.type === 'ka') {
+        writer.appendUInt8(5);
     } else {
         throw Error('Invalid message');
     }

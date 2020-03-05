@@ -11,7 +11,8 @@ export class ClientConnection {
     onAborted?: () => void;
 
     private _socket!: net.Socket;
-    private _logger: P.Logger
+    private _logger: P.Logger;
+    private _interval: any;
 
     constructor(port: number, uid: string, ws: WebSocket) {
         this.ws = ws;
@@ -27,6 +28,9 @@ export class ClientConnection {
             if (!closed) {
                 this._logger.info(this.uid + ': Connected');
                 this.ws.send(serializeClientProto({ type: 'connected', id: this.uid }));
+                this._interval = setInterval(() => {
+                    this.ws.send(serializeClientProto({ type: 'ka' }));
+                }, 15000);
             }
         });
         this._socket.on('data', (data) => {
@@ -65,6 +69,10 @@ export class ClientConnection {
     }
 
     close = () => {
+        if (this._interval) {
+            clearInterval(this._interval);
+            this._interval = null;
+        }
         try {
             if (!this._socket.destroyed) {
                 this._socket.destroy();
