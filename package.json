@@ -15,6 +15,9 @@
     "key": "tsc && node ./dist/newKey.js",
     "docker": "./scripts/increment_version.js && ./scripts/docker.sh"
   },
+  "bin": {
+    "opentunnel": "bin/opentunnel.js"
+  },
   "dependencies": {
     "acme-client": "^3.3.1",
     "commander": "^4.1.1",

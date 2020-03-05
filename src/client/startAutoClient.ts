@@ -2,10 +2,11 @@ import fs from 'fs';
 import path from 'path';
 import tls from 'tls';
 import net from 'net';
-import fetch from "node-fetch";
 import acme from 'acme-client';
 import { ClientTunnel } from './ClientTunnel';
 import { createLogger } from "../utils/createLogger";
+import { backoff } from '../utils/timer';
+import { registerRandomDomain } from '../registrator/registerRandomDomain';
 
 const logger = createLogger('client');
 
@@ -27,18 +28,14 @@ export async function startAutoClient(port: number) {
     // Load host and key
     if (!host || !key) {
         logger.info('Generating hostname');
-        let registration = await fetch('https://registrator.orcarium.com/random', { method: 'POST', body: '' });
-        if (!registration.ok) {
-            throw Error('Unexpected error');
-        }
-        let res = await registration.json();
-        key = Buffer.from(res.token, 'base64');
-        host = res.host as string;
+        let reg = await backoff(() => registerRandomDomain());
+        key = Buffer.from(reg.token, 'base64');
+        host = reg.host as string;
         logger.info('Got hostname: ' + host);
         if (!fs.existsSync('.opentunnel')) {
             fs.mkdirSync('.opentunnel');
         }
-        fs.writeFileSync(configPath, JSON.stringify({ host, key: res.token }), 'utf-8');
+        fs.writeFileSync(configPath, JSON.stringify({ host, key: reg.token }), 'utf-8');
     }
 
     //

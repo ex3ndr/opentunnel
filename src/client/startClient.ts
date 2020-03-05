@@ -6,7 +6,6 @@ const logger = createLogger('client');
 
 export function startClient(proxyUrl: string, port: number, httpPort: number, key: string) {
 
-
     let keyValue = Buffer.from(key, 'base64');
     async function _wkHandler(path: string) {
         let res = await fetch('http://localhost:' + httpPort + '/.well-known' + path);
