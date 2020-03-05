@@ -15,6 +15,6 @@ export async function registerRandomDomain(registrator: string = 'https://regist
 
     return {
         host: res.host as string,
-        token: res.host as string
+        token: res.token as string
     };
 }

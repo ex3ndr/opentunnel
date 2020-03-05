@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: opentunnel
-          image: ex3ndr/opentunnel:v22
+          image: ex3ndr/opentunnel:v24
           command: ['node', './cli.js']
           args: ['registrator', 'orcarium.com']
           env:

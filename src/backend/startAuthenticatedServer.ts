@@ -1,6 +1,9 @@
 import WebSocket from 'ws';
 import nacl from 'tweetnacl';
 import { BufferReader } from '../utils/BufferReader';
+import { createLogger } from '../utils/createLogger';
+
+const logger = createLogger('server');
 
 export function startAuthenticatedServer(publicKey: string, port: number, handler: (host: string, ws: WebSocket) => void) {
     const wss = new WebSocket.Server({ port: port });
@@ -24,6 +27,7 @@ export function startAuthenticatedServer(publicKey: string, port: number, handle
                     let body = reader.readBuffer(bodyLength);
                     let openBox = nacl.sign.open(body, publicKeyVal);
                     if (!openBox) {
+                        logger.info('Invalid key');
                         ws.close();
                         return;
                     }
@@ -34,6 +38,7 @@ export function startAuthenticatedServer(publicKey: string, port: number, handle
                     let hostName = reader.readAsciiString(hostNameLength);
                     let timeout = reader.readUInt32();
                     if (timeout !== 0 && timeout > Date.now() / 1000) { // Check for timeout
+                        logger.info('Key expired');
                         ws.close();
                         return;
                     }
@@ -41,6 +46,7 @@ export function startAuthenticatedServer(publicKey: string, port: number, handle
                     // Invoke handler
                     handler(hostName.toLowerCase(), ws);
                 } else {
+                    logger.info('Invalid header. Expected 0, got: ' + header);
                     ws.close();
                     return;
                 }

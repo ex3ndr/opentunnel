@@ -50,7 +50,7 @@ export class ClientTunnel {
                 this._disconnected();
             }
         });
-        ws.on('error', () => {
+        ws.on('error', (e) => {
             if (this._ws === ws) {
                 this._disconnected();
             }
