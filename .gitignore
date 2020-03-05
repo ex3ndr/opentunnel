@@ -3,3 +3,4 @@ dist
 auth_secret.key
 auth_public.key
 auth_client.key
+.opentunnel

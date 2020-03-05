@@ -35,11 +35,11 @@ export class ClientConnection {
                 this.ws.send(serializeClientProto({ type: 'frame', id: this.uid, frame: data }));
             }
         });
-        this._socket.on('error', () => {
+        this._socket.on('error', (e) => {
             if (!closed) {
                 closed = true;
 
-                this._logger.info(this.uid + ': Error');
+                this._logger.info(this.uid + ': Error', e);
                 this.ws.send(serializeClientProto({ type: 'aborted', id: this.uid }));
                 if (this.onAborted) {
                     this.onAborted();

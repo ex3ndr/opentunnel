@@ -1,5 +1,4 @@
 import WebSocket from 'ws';
-import fetch from 'node-fetch';
 import { ClientConnection } from './ClientConnection';
 import { BufferWriter } from './../utils/BufferWriter';
 import { parseClientProto, serializeClientProto } from '../proto/clientProto';
@@ -10,15 +9,15 @@ const logger = createLogger('client');
 export class ClientSession {
     private ws: WebSocket;
     private port: number;
-    private httpPort: number;
     private key: Buffer;
+    private wkHandler: (path: string) => Promise<Buffer | null>;
     private connections = new Map<string, ClientConnection>();
 
-    constructor(port: number, httpPort: number, key: Buffer, ws: WebSocket) {
+    constructor(port: number, key: Buffer, wkHandler: (path: string) => Promise<Buffer | null>, ws: WebSocket) {
         this.port = port;
-        this.httpPort = httpPort;
         this.key = key;
         this.ws = ws;
+        this.wkHandler = wkHandler;
 
         // Initialize session
         this.ws.on('message', this._handleMessage);
@@ -65,13 +64,8 @@ export class ClientSession {
             logger.info(message.requestId + ': Well-known request at ' + message.path);
             (async () => {
                 try {
-                    let res = await fetch('http://localhost:' + this.httpPort + '/.well-known' + message.path);
-                    if (res.ok) {
-                        let ex = await res.buffer();
-                        this.ws.send(serializeClientProto({ type: 'wk-response', requestId: message.requestId, content: ex }));
-                    } else {
-                        this.ws.send(serializeClientProto({ type: 'wk-response', requestId: message.requestId, content: null }));
-                    }
+                    let res = await this.wkHandler(message.path);
+                    this.ws.send(serializeClientProto({ type: 'wk-response', requestId: message.requestId, content: res }));
                 } catch (e) {
                     this.ws.send(serializeClientProto({ type: 'wk-response', requestId: message.requestId, content: null }));
                 }

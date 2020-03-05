@@ -3,22 +3,28 @@ import { startClient } from "./client/startClient";
 import { startFrontend } from './frontend/startFrontend';
 import { startBackend } from './backend/startBackend';
 import { startRegistrator } from './registrator/startRegistrator';
+import { startAutoClient } from './client/startAutoClient';
 
 function commaSeparatedList(value: string) {
     return value.split(',');
 }
 
 program
-    .command('client <key>')
+    .command('client ')
+    .option('-k <key>', 'Connection key')
     .option('-s <server>', 'Custom server')
     .option('-p <port>', 'Local port')
     .option('-ph <port>', 'Listening http port')
-    .action(function (keyP, cmdObj) {
+    .action(function (cmdObj) {
         let port = cmdObj.P ? parseInt(cmdObj.P) : 443;
         let httpPort = cmdObj.Ph ? parseInt(cmdObj.Ph) : 80;
         let server = cmdObj.S ? cmdObj.S as string : 'wss://backhaul.orcarium.com'
-        let key = keyP as string;
-        startClient(server, port, httpPort, key);
+        let key = cmdObj.K as string;
+        if (key) {
+            startClient(server, port, httpPort, key);
+        } else {
+            startAutoClient(port);
+        }
     });
 program
     .command('frontend')
