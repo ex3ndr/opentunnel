@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: opentunnel
-          image: ex3ndr/opentunnel:v24
+          image: ex3ndr/opentunnel:v25
           command: ["node", "./cli.js"]
           args: ["frontend", '-s', 'opentunnel-nats']
           ports:

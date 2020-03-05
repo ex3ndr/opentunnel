@@ -16,9 +16,9 @@ spec:
     spec:
       containers:
         - name: opentunnel
-          image: ex3ndr/opentunnel:v24
+          image: ex3ndr/opentunnel:v25
           command: ['node', './cli.js']
-          args: ['registrator', 'orcarium.com']
+          args: ['registrator', 'tnnl.org']
           env:
             - name: REG_KEY
               valueFrom:
