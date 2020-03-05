@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: opentunnel
-          image: ex3ndr/opentunnel:v27
+          image: ex3ndr/opentunnel:v28
           command: ['node', './cli.js']
           args:
             [
