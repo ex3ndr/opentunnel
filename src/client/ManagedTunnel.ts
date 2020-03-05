@@ -24,10 +24,15 @@ export class ManagedTunnel {
     private _acmeKeys = new Map<string, string>();
     private _tlsServer!: tls.Server;
     private _isReady: boolean = false;
+    private _isConnected: boolean = false;
 
     onHostnameRegistered?: (host: string, token: string) => Promise<void>;
     onCertificateUpdated?: (cert: { chain: string, certificate: string, privateKey: string }) => Promise<void>;
     onACMEAccountKeyCreated?: (accountKey: string) => Promise<void>;
+
+    onConnected?: () => void;
+    onDisconnected?: () => void;
+    onReady?: () => void;
 
     constructor(
         port: number,
@@ -36,6 +41,15 @@ export class ManagedTunnel {
         this.port = port;
         this._config = config;
     }
+
+    get ready(): boolean {
+        return this._isReady;
+    }
+
+    get connected(): boolean {
+        return this._isConnected;
+    }
+
 
     start = () => {
         logger.info('Starting TLS proxy...');
@@ -80,10 +94,22 @@ export class ManagedTunnel {
             } else {
                 logger.info('Tunnel Restarted');
             }
+            if (!this._isConnected) {
+                this._isConnected = true;
+                if (this.onConnected) {
+                    this.onConnected();
+                }
+            }
         };
 
         this._tunnel.onDisconnected = () => {
             logger.info('Tunnel Disconnected');
+            if (this._isConnected) {
+                this._isConnected = false;
+                if (this.onDisconnected) {
+                    this.onDisconnected();
+                }
+            }
         };
         this._tunnel.start();
     }
@@ -96,7 +122,7 @@ export class ManagedTunnel {
             if (info.domains.commonName.toLowerCase() === this._config.host) {
                 let expire = new Date(info.notAfter).getTime();
                 if (Date.now() <= expire) {
-                    this._ready();
+                    this._onReady();
                     return;
                 } else {
                     logger.info('Existing certificate expired');
@@ -112,12 +138,15 @@ export class ManagedTunnel {
         }
         this._config.certificate = res;
         logger.info('Certificate issued');
-        this._ready();
+        this._onReady();
     }
 
-    private _ready = () => {
+    private _onReady = () => {
         this._tlsServer.setSecureContext({ key: this._config.certificate!.privateKey, cert: this._config.certificate!.chain });
         this._isReady = true;
+        if (this.onReady) {
+            this.onReady();
+        }
         this._refreshCertificateService();
 
         logger.info('Tunnel ready: https://' + this._config.host);

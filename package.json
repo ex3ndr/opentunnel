@@ -1,6 +1,6 @@
 {
   "name": "opentunnel",
-  "version": "0.0.28",
+  "version": "0.0.29",
   "main": "dist/index.js",
   "repository": "https://github.com/ex3ndr/opentunnel.git",
   "author": "Steve Korshakov <steve@korshakov.com>",
