@@ -138,6 +138,12 @@ export class ManagedTunnel {
             socket.destroy();
             return;
         }
+        let to = net.createConnection({
+            host: 'localhost',
+            port: this.port
+        });
+        socket.pipe(to);
+        to.pipe(socket);
     }
 
     private _fetchNewCertificates = async () => {

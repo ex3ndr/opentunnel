@@ -1,8 +1,6 @@
 import net from 'net';
 import WebSocket from 'ws';
 import { serializeClientProto } from '../proto/clientProto';
-import { createLogger } from '../utils/createLogger';
-import P from 'pino';
 
 export class ClientConnection {
     readonly ws: WebSocket;
@@ -11,14 +9,12 @@ export class ClientConnection {
     onAborted?: () => void;
 
     private _socket!: net.Socket;
-    private _logger: P.Logger;
     private _interval: any;
 
     constructor(port: number, uid: string, ws: WebSocket) {
         this.ws = ws;
         this.uid = uid;
         this.port = port;
-        this._logger = createLogger('client:' + uid);
     }
 
     start = () => {
@@ -26,7 +22,6 @@ export class ClientConnection {
         let closed = false;
         this._socket.on('connect', () => {
             if (!closed) {
-                this._logger.info(this.uid + ': Connected');
                 this.ws.send(serializeClientProto({ type: 'connected', id: this.uid }));
                 this._interval = setInterval(() => {
                     this.ws.send(serializeClientProto({ type: 'ka' }));
@@ -35,15 +30,12 @@ export class ClientConnection {
         });
         this._socket.on('data', (data) => {
             if (!closed) {
-                this._logger.info(this.uid + ': << ' + data.length);
                 this.ws.send(serializeClientProto({ type: 'frame', id: this.uid, frame: data }));
             }
         });
         this._socket.on('error', (e) => {
             if (!closed) {
                 closed = true;
-
-                this._logger.info(this.uid + ': Error', e);
                 this.ws.send(serializeClientProto({ type: 'aborted', id: this.uid }));
                 if (this.onAborted) {
                     this.onAborted();
@@ -53,7 +45,6 @@ export class ClientConnection {
         this._socket.on('close', () => {
             if (!closed) {
                 closed = true;
-                this._logger.info(this.uid + ': Closed');
                 this.ws.send(serializeClientProto({ type: 'aborted', id: this.uid }));
                 if (this.onAborted) {
                     this.onAborted();
@@ -64,7 +55,6 @@ export class ClientConnection {
     }
 
     onFrame = (buffer: Buffer) => {
-        this._logger.info(this.uid + ': >> ' + buffer.length);
         this._socket.write(buffer); // Handle result??
     }
 
