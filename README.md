@@ -17,7 +17,7 @@ yarn global add opentunnel
 
 Now you can start a tunnel for your local server that listens on **8080** port:
 ```bash
-opentunnel client -p 8080
+opentunnel -p 8080
 ```
 
 Opentunnel creates a config file with certificates in .opentunnel directory in current working one. If you want to keep your domain name you have to preserver this directory.
