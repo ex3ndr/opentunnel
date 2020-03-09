@@ -1,5 +1,6 @@
 # Opentunnel - encrypted tunnels to localhost
 opentunnel is a reverse proxy that creates an encrypted tunnel from a random public endpoint to a locally running web service.
+Opentunnel support any TCP connections and all modern browsers and devices (that support TLS v3).
 
 ## Status of the Opentunnel
 Opentunnel is in it's early experimental, but stable state. Opentunnel is tuned for low volume traffic and low latencies (any end-user app/device).
@@ -14,10 +15,14 @@ yarn global add opentunnel
 opentunnel client -p 8080
 ```
 
-# Backend
+# Your own deployment
 Backend is completely stateless. There are three servers - registration server (issuen authentication tokens), frontend server (accepts incoming connections) and backend server (accepting tunnel connections). Authentication tokens are like JWT, but using fast and proven crypto via NaCL/TweetNaCL.
 
-## NATS bus
+## Requirements
+### Domain Name
+Domain name that is used for issuing tl
+### Two public IPs
+### NATS bus
 Opentunnel uses NATS for messaging between servers that scales well and is able to route traffic via shortest network path. Before deployment of Opentunnel you have to deploy NATS cluster.
 
 ## Frontend
@@ -39,6 +44,16 @@ opentunnel backend <key> -p <listening_port> -s <nats_servers>
 * <key> is a public part of the authentication key.
 * <listening_port> is a port to listen too. Default is 9001.
 * <nats_servers> is a NATS server endpoints to connect to. Default is localhost.
+
+## Registrator
+Default registration server that issues random domains. 
+This operation requires **REG_KEY** environment key with a secret part of authentication key.
+
+```bash
+opentunnel registrator <domain> -p <listening_port>
+```
+* <host> is a base domain that is used to issue tokens for random subdomains.
+* <listening_port> is a port to listen too. Default is 9001.
 
 ## Licence
 MIT (c) Steve Korshakov
