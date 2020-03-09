@@ -7,15 +7,18 @@ Opentunnel support any TCP connections and all modern browsers and devices (that
 ## Status of the Opentunnel
 Opentunnel is in it's early experimental, but stable state. Opentunnel is tuned for low volume traffic and low latencies (any end-user app/device).
 
-## Install
+## Getting Started
+Opentunnel is a nodejs commandline utility that have client and server in a single binary. To instal it to your system execute:
 ```bash
 yarn global add opentunnel
 ```
 
-## Start Tunnel
+Now you can start a tunnel:
 ```bash
 opentunnel client -p 8080
 ```
+
+Opentunnel creates a config file with certificates in .opentunnel directory in current working one, preserve it if you want to keep your domain name.
 
 # Your own deployment
 Backend is completely stateless. There are three servers - registration server (issuen authentication tokens), frontend server (accepts incoming connections) and backend server (accepting tunnel connections). Authentication tokens are like JWT, but using fast and proven crypto via NaCL/TweetNaCL.
