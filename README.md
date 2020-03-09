@@ -1,4 +1,4 @@
-# Opentunnel - encrypted and open source version tunnels to localhost.
+# Opentunnel - encrypted tunnels to localhost
 opentunnel is a reverse proxy that creates an encrypted tunnel from a random public endpoint to a locally running web service.
 
 ## Status of the Opentunnel
