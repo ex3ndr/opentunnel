@@ -173,6 +173,24 @@ export class ManagedTunnel {
         });
         socket.pipe(to);
         to.pipe(socket);
+        socket.on('error', () => {
+            try {
+                if (!to.destroyed) {
+                    to.destroy();
+                }
+            } catch (e) {
+                logger.warn(e);
+            }
+        });
+        to.on('error', () => {
+            try {
+                if (!socket.destroyed) {
+                    socket.destroy();
+                }
+            } catch (e) {
+                logger.warn(e);
+            }
+        });
     }
 
     private _fetchNewCertificates = async () => {
