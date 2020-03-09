@@ -22,7 +22,7 @@ opentunnel client -p 8080
 
 Opentunnel creates a config file with certificates in .opentunnel directory in current working one. If you want to keep your domain name you have to preserver this directory.
 
-# Your own deployment
+# Self Hosting
 Backend is completely stateless. There are three servers - registration server (issuen authentication tokens), frontend server (accepts incoming connections) and backend server (accepting tunnel connections). Authentication tokens are like JWT, but using fast and proven crypto via NaCL/TweetNaCL.
 
 ## Requirements
