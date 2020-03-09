@@ -10,7 +10,7 @@ function commaSeparatedList(value: string) {
 }
 
 program
-    .command('client ')
+    .command('client')
     .option('-k <key>', 'Connection key')
     .option('-s <server>', 'Custom server')
     .option('-p <port>', 'Local port')
