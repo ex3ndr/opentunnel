@@ -4,11 +4,15 @@ opentunnel is a reverse proxy that creates an encrypted tunnel from a random pub
 ## Status of the Opentunnel
 Opentunnel is in it's early experimental, but stable state.
 
-### Start Tunnel
+## Install
 ```bash
-npx opentunnel client -p 8080
+yarn global add opentunnel
 ```
 
+## Start Tunnel
+```bash
+opentunnel client -p 8080
+```
 
 ## Licence
 MIT (c) Steve Korshakov
