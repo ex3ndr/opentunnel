@@ -8,12 +8,14 @@ Opentunnel support any TCP connections and all modern browsers and devices (that
 Opentunnel is in it's early experimental, but stable state. Opentunnel is tuned for low volume traffic and low latencies (any end-user app/device).
 
 ## Getting Started
-Opentunnel is a nodejs commandline utility that have client and server in a single binary. To instal it to your system execute:
+Opentunnel is a nodejs commandline utility that have client and server in a single binary. When starting a tunnel it registers it self on registration server to get a domain name, starts a tunnel, then issue a certificate via let's encrypt and then enable traffic flow to your server completely end-to-end encrypted.
+
+To instal it to your system execute:
 ```bash
 yarn global add opentunnel
 ```
 
-Now you can start a tunnel:
+Now you can start a tunnel for your local server that listens on **8080** port:
 ```bash
 opentunnel client -p 8080
 ```
