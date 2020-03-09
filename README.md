@@ -4,5 +4,5 @@ End-to-end encrypted and open source version of NGrok.
 ### Start Tunnel
 
 ```bash
-npx opentunnel -p 8080
+npx opentunnel client -p 8080
 ```
