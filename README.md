@@ -1,4 +1,6 @@
 # Opentunnel - encrypted tunnels to localhost
+[![Version npm](https://img.shields.io/npm/v/opentunnel.svg?logo=npm)](https://www.npmjs.com/package/ws)
+
 opentunnel is a reverse proxy that creates an encrypted tunnel from a random public endpoint to a locally running web service.
 Opentunnel support any TCP connections and all modern browsers and devices (that support TLS v3).
 
