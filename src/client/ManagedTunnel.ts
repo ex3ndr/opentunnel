@@ -25,6 +25,8 @@ export class ManagedTunnel {
     private _tlsServer!: tls.Server;
     private _isReady: boolean = false;
     private _isConnected: boolean = false;
+    private _enabled: boolean = false;
+    private _connections = new Set<tls.TLSSocket>();
 
     onHostnameRegistered?: (host: string, token: string) => Promise<void>;
     onCertificateUpdated?: (cert: { chain: string, certificate: string, privateKey: string }) => Promise<void>;
@@ -59,6 +61,19 @@ export class ManagedTunnel {
             logger.info('TLS proxy started at ' + this._tlsPort);
             this._ensureRegistration();
         });
+    }
+
+    enable() {
+        this._enabled = true;
+    }
+
+    disable() {
+        this._enabled = false;
+        let connections = Array.from(this._connections);
+        this._connections.clear();
+        for (let c of connections) {
+            c.destroy();
+        }
     }
 
     private _ensureRegistration = async () => {
@@ -163,10 +178,15 @@ export class ManagedTunnel {
     }
 
     private _handleIncomingSocket = (socket: tls.TLSSocket) => {
+        if (!this._enabled) {
+            socket.destroy();
+            return;
+        }
         if (!this._isReady) {
             socket.destroy();
             return;
         }
+        this._connections.add(socket);
         let to = net.createConnection({
             host: 'localhost',
             port: this.port
@@ -181,8 +201,28 @@ export class ManagedTunnel {
             } catch (e) {
                 logger.warn(e);
             }
+            this._connections.delete(socket);
+        });
+        socket.on('close', () => {
+            try {
+                if (!to.destroyed) {
+                    to.destroy();
+                }
+            } catch (e) {
+                logger.warn(e);
+            }
+            this._connections.delete(socket);
         });
         to.on('error', () => {
+            try {
+                if (!socket.destroyed) {
+                    socket.destroy();
+                }
+            } catch (e) {
+                logger.warn(e);
+            }
+        });
+        to.on('close', () => {
             try {
                 if (!socket.destroyed) {
                     socket.destroy();

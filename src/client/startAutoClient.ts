@@ -49,5 +49,6 @@ export async function startAutoClient(port: number) {
     managedTunnel.onHostnameRegistered = async (host, token) => {
         fs.writeFileSync(configPath, JSON.stringify({ host, token }), 'utf-8');
     };
+    managedTunnel.enable();
     managedTunnel.start();
 }
