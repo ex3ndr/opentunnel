@@ -23,7 +23,7 @@
     "commander": "^4.1.1",
     "express": "4.17.1",
     "inspirational-quotes": "^1.0.8",
-    "node-fetch": "^2.6.0",
+    "node-fetch": "^2.6.7",
     "pino": "^5.17.0",
     "pino-pretty": "^3.6.0",
     "ts-nats": "1.2.4",
