@@ -21,7 +21,7 @@
   "dependencies": {
     "acme-client": "^3.3.1",
     "commander": "^4.1.1",
-    "express": "4.17.1",
+    "express": "4.17.3",
     "inspirational-quotes": "^1.0.8",
     "node-fetch": "^2.6.0",
     "pino": "^5.17.0",
